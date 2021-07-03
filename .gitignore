@@ -1,1 +1,9 @@
 game-venv/
+
+*.egg-info/
+build/
+dist/
+
+*/__pycache__
+
+results/
