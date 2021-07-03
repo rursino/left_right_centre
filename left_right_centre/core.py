@@ -13,13 +13,10 @@ class Game:
         self.end_of_game = False
         
         self._setup_game()
-
-    def _setup_chips(self):
-        return self.no_of_chips // self.no_of_players
     
     def _setup_game(self):
         self.players = {
-            i : Player(i, self._setup_chips()) for i in range(1, self.no_of_players + 1)
+            i : Player(i, self.no_of_chips // self.no_of_players) for i in range(1, self.no_of_players + 1)
         }
 
         self.history = [{i : self.players[i].chips for i in range(1, self.no_of_players + 1)}]
