@@ -1,6 +1,9 @@
 from numpy import random
 import numpy as np
 import csv
+import pandas as pd
+
+import ipdb
 
 
 class Game:
@@ -19,8 +22,14 @@ class Game:
             i : Player(i, self.no_of_chips // self.no_of_players) for i in range(1, self.no_of_players + 1)
         }
 
-        self.history = [{i : self.players[i].chips for i in range(1, self.no_of_players + 1)}]
-        self.history[0]['centre_pile'] = self.chips_in_centre_pile
+        self.history = History(self.no_of_players)
+
+        for id in self.players:
+            self.history.data[id].append(self.players[id].chips)
+        
+        self.history.data['centre_pile'].append(self.chips_in_centre_pile)
+        self.history.data['player_in_play'].append(np.nan)
+        self.history.data['dices'].append(np.nan)
     
     def _access_player_ids(self, player_id, movement):
         nop = self.no_of_players
@@ -32,13 +41,12 @@ class Game:
             return player_id + movement
     
     def _record_turn(self, player_id, dices):
-        turn_info = {
-            i : self.players[i].chips for i in range(1, self.no_of_players + 1)
-        }
-        turn_info['centre_pile'] = self.chips_in_centre_pile
-        turn_info['player_in_play'] = player_id
-        turn_info['dices'] = dices
-        self.history.append(turn_info)
+        for id in self.players:
+            self.history.data[id].append(self.players[id].chips)
+        
+        self.history.data['centre_pile'].append(self.chips_in_centre_pile)
+        self.history.data['player_in_play'].append(player_id)
+        self.history.data['dices'].append(dices)
     
     def _roll_dice(self):
         return random.choice(self.dice)
@@ -108,16 +116,27 @@ class Game:
         print("END OF GAME")
         print("="*20)
 
-        toCSV = self.history[1:]
-        with open('results/history.csv', 'w+', newline ='') as file:    
-            writer = csv.DictWriter(file , toCSV[0].keys())
-            writer.writeheader()
-            writer.writerows(toCSV)
+        df = pd.DataFrame(self.history.data)
+        fname = "results/history.csv"
+        df.to_csv(fname)  
+            
 
 class Player:
-    def __init__(self, id, chips):
+    def __init__(self, id, chips, name=''):
         self.id = id
         self.chips = chips
+        self.name = name
     
     def __repr__(self):
-        return f"Player {self.id} --> Number of chips: {self.chips}"
+        return f"Player {self.name} ({self.id}) --> Number of chips: {self.chips}"
+
+
+class History:
+    def __init__(self, no_of_players, fname):
+        self.columns = list(range(1, no_of_players + 1)) + ['centre_pile', 'player_in_play', 'dices']
+        self.data = {col: [] for col in self.columns}
+
+        self.no_of_players = no_of_players
+    
+    def __repr__(self):
+        return pd.DataFrame(self.data)
