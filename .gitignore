@@ -1,4 +1,5 @@
-game-venv/
+Pipfile
+Pipfile.lock
 
 *.egg-info/
 build/

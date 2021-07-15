@@ -3,8 +3,6 @@ import numpy as np
 import csv
 import pandas as pd
 
-import ipdb
-
 
 class Game:
     def __init__(self, no_of_players=3, no_of_chips=100):
@@ -116,9 +114,8 @@ class Game:
         print("END OF GAME")
         print("="*20)
 
-        df = pd.DataFrame(self.history.data)
         fname = "results/history.csv"
-        df.to_csv(fname)  
+        self.history.to_csv(fname)  
             
 
 class Player:
@@ -132,11 +129,18 @@ class Player:
 
 
 class History:
-    def __init__(self, no_of_players, fname):
+    def __init__(self, no_of_players):
         self.columns = list(range(1, no_of_players + 1)) + ['centre_pile', 'player_in_play', 'dices']
         self.data = {col: [] for col in self.columns}
 
         self.no_of_players = no_of_players
     
-    def __repr__(self):
+    def search(self, target, col):
+        column = df[col]
+        return [i for i, row in enumerate(column) if target == row]
+
+    def to_dataframe(self):
         return pd.DataFrame(self.data)
+
+    def to_csv(self, fname):
+        pd.DataFrame(self.data).to_csv(fname)

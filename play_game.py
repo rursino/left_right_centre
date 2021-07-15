@@ -1,9 +1,18 @@
 from left_right_centre import core
 from numpy import random
 import csv
+import argparse
 
-no_of_players = 14
-no_of_chips = no_of_players * 100
 
-g = core.Game(no_of_players, no_of_chips)
+parser = argparse.ArgumentParser(description="Play a game of Left, Right and Centre.")
+parser.add_argument("-p", "--players", type=int, default=4, metavar="", help="Number of players.")
+parser.add_argument("-c", "--chips", type=int, default=100, metavar="", help="Number of chips.")
+parser.add_argument("-s", "--show", action="store_true", help="Show game history.")
+args = parser.parse_args()
+
+
+g = core.Game(args.players, args.chips)
+
 g.play_game()
+if args.show:
+    print(g.history.to_dataframe())
