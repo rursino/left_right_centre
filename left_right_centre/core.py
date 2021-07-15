@@ -114,8 +114,8 @@ class Game:
         print("END OF GAME")
         print("="*20)
 
-        fname = "results/history.csv"
-        self.history.to_csv(fname)  
+        #fname = "results/history.csv"
+        #self.history.to_csv(fname)  
             
 
 class Player:
@@ -135,12 +135,15 @@ class History:
 
         self.no_of_players = no_of_players
     
-    def search(self, target, col):
-        column = df[col]
-        return [i for i, row in enumerate(column) if target == row]
-
     def to_dataframe(self):
         return pd.DataFrame(self.data)
+    
+    def search(self, target, col):
+        column = self.data[col]
+        return [i for i, row in enumerate(column) if target == row]
+
+    def iloc(self, row):
+        return self.to_dataframe().iloc[row]
 
     def to_csv(self, fname):
         pd.DataFrame(self.data).to_csv(fname)
