@@ -15,7 +15,4 @@ g = core.Game(args.players, args.chips)
 
 g.play_game()
 if args.show:
-    print(g.history.to_dataframe())
-    print('\n' + '='*50 + '\n')
-    print(g.history.search(['pd', 'pd', 'pd'], 'dices'))
-    print(g.history.iloc(56))
+    print(g.history.to_csv("results/history.csv"))

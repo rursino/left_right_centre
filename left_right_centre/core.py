@@ -137,13 +137,65 @@ class History:
     
     def to_dataframe(self):
         return pd.DataFrame(self.data)
-    
-    def search(self, target, col):
-        column = self.data[col]
-        return [i for i, row in enumerate(column) if target == row]
-
-    def iloc(self, row):
-        return self.to_dataframe().iloc[row]
 
     def to_csv(self, fname):
         pd.DataFrame(self.data).to_csv(fname)
+
+
+class Statistics:
+    def __init__(self, data):
+        if type(data) == str and data.endswith(".csv"):
+            _data = pd.read_csv(data)
+            _data = _data.drop("Unnamed: 0", axis=1)
+        elif type(data) == pd.DataFrame:
+            _data = data
+
+        self.data = _data
+        self._cast_dice_lists() 
+
+        self.no_of_players = self._no_of_players()
+        self.final_stats = {
+            'winner': self._winner(),
+            'winner_pile': self.iloc(-1)[str(self._winner())],
+            'centre_pile': self.iloc(-1).centre_pile,
+            'game_length': self.game_length()
+        }
+    
+    def _cast_dice_lists(self):
+        dice_list = []
+        for row in self.data.dices:
+            try:
+                new_row = row.strip('][').replace("'", "").split(', ')
+            except AttributeError:
+                new_row = np.nan
+            dice_list.append(new_row)
+
+        self.data.dices = dice_list
+
+    def _no_of_players(self):
+        players = 0
+        for col in self.data.columns:
+            try:
+                int(col)
+                players += 1
+            except:
+                pass
+        return players
+
+    def _winner(self):
+        final_turn = self.data.iloc[-1]
+        for player in range(1, self.no_of_players + 1):
+            if final_turn[str(player)] != 0:
+                return player
+
+    def game_length(self):
+        return len(self.data) - 1
+
+    def iloc(self, row):
+        return self.data.iloc[row]
+
+    def search_dice_patterns(self, dice_1, dice_2, dice_3):
+        column = self.data['dices']
+
+        target = [dice_1, dice_2, dice_3]
+        return [i for i, row in enumerate(column) if row == target] 
