@@ -23,7 +23,7 @@ class Game:
         self.history = History(self.no_of_players)
 
         for id in self.players:
-            self.history.data[id].append(self.players[id].chips)
+            self.history.data[f"p{id}"].append(self.players[id].chips)
         
         self.history.data['centre_pile'].append(self.chips_in_centre_pile)
         self.history.data['player_in_play'].append(np.nan)
@@ -40,7 +40,7 @@ class Game:
     
     def _record_turn(self, player_id, dices):
         for id in self.players:
-            self.history.data[id].append(self.players[id].chips)
+            self.history.data[f"p{id}"].append(self.players[id].chips)
         
         self.history.data['centre_pile'].append(self.chips_in_centre_pile)
         self.history.data['player_in_play'].append(player_id)
@@ -114,9 +114,6 @@ class Game:
         print("END OF GAME")
         print("="*20)
 
-        #fname = "results/history.csv"
-        #self.history.to_csv(fname)  
-            
 
 class Player:
     def __init__(self, id, chips, name=''):
@@ -130,9 +127,8 @@ class Player:
 
 class History:
     def __init__(self, no_of_players):
-        self.columns = list(range(1, no_of_players + 1)) + ['centre_pile', 'player_in_play', 'dices']
+        self.columns = [f"p{i}" for i in range(1, no_of_players + 1)] + ['centre_pile', 'player_in_play', 'dices']
         self.data = {col: [] for col in self.columns}
-
         self.no_of_players = no_of_players
     
     def to_dataframe(self):
@@ -147,46 +143,47 @@ class Statistics:
         if type(data) == str and data.endswith(".csv"):
             _data = pd.read_csv(data)
             _data = _data.drop("Unnamed: 0", axis=1)
+            _data = self._cast_dice_lists(_data)
         elif type(data) == pd.DataFrame:
             _data = data
 
         self.data = _data
-        self._cast_dice_lists() 
 
         self.no_of_players = self._no_of_players()
         self.final_stats = {
             'winner': self._winner(),
-            'winner_pile': self.iloc(-1)[str(self._winner())],
+            'winner_pile': self.iloc(-1)[f"p{self._winner()}"],
             'centre_pile': self.iloc(-1).centre_pile,
             'game_length': self.game_length()
         }
     
-    def _cast_dice_lists(self):
+    def _cast_dice_lists(self, data):
         dice_list = []
-        for row in self.data.dices:
+        for row in data.dices:
             try:
                 new_row = row.strip('][').replace("'", "").split(', ')
             except AttributeError:
                 new_row = np.nan
             dice_list.append(new_row)
 
-        self.data.dices = dice_list
+        data.dices = dice_list
 
     def _no_of_players(self):
         players = 0
         for col in self.data.columns:
-            try:
-                int(col)
-                players += 1
-            except:
-                pass
+            if col.startswith('p'):
+                try:
+                    int(col[-1])
+                    players += 1
+                except:
+                    pass
         return players
 
     def _winner(self):
         final_turn = self.data.iloc[-1]
-        for player in range(1, self.no_of_players + 1):
-            if final_turn[str(player)] != 0:
-                return player
+        for id in range(1, self.no_of_players + 1):
+            if final_turn[f"p{id}"] != 0:
+                return id
 
     def game_length(self):
         return len(self.data) - 1

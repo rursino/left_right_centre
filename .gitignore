@@ -1,5 +1,5 @@
-Pipfile
-Pipfile.lock
+pyproject.toml
+poetry.lock
 
 *.egg-info/
 build/
@@ -7,4 +7,8 @@ dist/
 
 */__pycache__
 
+combo.py
+play_game.py
+test_multiple.py
+analyse_history.py
 results/

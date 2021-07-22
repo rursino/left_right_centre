@@ -1,2 +1,2 @@
-from .core import Game, Player
+from .core import Game, Player, History, Statistics
 from .version import __version__
