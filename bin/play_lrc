@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+from left_right_centre import core
+from numpy import random
+import csv
 import argparse
 
-import left_right_centre
 
 parser = argparse.ArgumentParser(description="Play a game of Left, Right and Centre.")
 parser.add_argument("-p", "--players", type=int, default=4, metavar="", help="Number of players.")
@@ -10,9 +12,9 @@ parser.add_argument("-s", "--show", action="store_true", help="Show game history
 args = parser.parse_args()
 
 
-def main():
-    return args
-
-
 if __name__ == "__main__":
-    main()
+    g = core.Game(args.players, args.chips)
+    g.play_game()
+
+    if args.show:
+        print(g.history.to_dataframe()

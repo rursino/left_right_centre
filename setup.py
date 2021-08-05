@@ -1,5 +1,5 @@
 import os
-from setuptools import setup, find_packages
+from setuptools import setup 
 from left_right_centre import __version__
 
 
@@ -15,6 +15,6 @@ setup(
     version=__version__,
     description='A simple game of Left, Right, Centre with ability to perform simulations.',
     author='Ross Ursino',
-    packages=find_packages(),
+    packages=['left_right_centre'],
     scripts=BIN_FILES
 )
