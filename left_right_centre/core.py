@@ -1,19 +1,21 @@
 from numpy import random
 import numpy as np
-import csv
 import pandas as pd
 
 
 class Game:
+
+    dice = ['L', 'R', 'C', 'd', 'd', 'pd']
+    chips_in_centre_pile = 0    
+    end_of_game = False
+    take_chips_on_pd = True
+
     def __init__(self, no_of_players=3, no_of_chips=100):
         self.no_of_players = no_of_players
         self.no_of_chips = no_of_chips
-        self.dice = ['L', 'R', 'C', 'd', 'd', 'pd']
-        self.chips_in_centre_pile = 0
-        
-        self.end_of_game = False
-        
+
         self._setup_game()
+        self.play_game()
     
     def _setup_game(self):
         self.players = {
@@ -51,28 +53,48 @@ class Game:
     
     def _distribute_chips(self, dices, player_id):
         player = self.players[player_id]
+
+        if dices == ['pd', 'pd', 'pd'] and self.take_chips_on_pd:
+            player.chips += self.chips_in_centre_pile
+            self.chips_in_centre_pile = 0
+        else:
+            left_player = self._access_player_ids(player_id, -1)
+            right_player = self._access_player_ids(player_id, 1)
+
+            for d in dices:
+                if d == 'L':
+                    player.chips -= 1
+                    self.players[left_player].chips += 1
+                elif d == 'R':
+                    player.chips -= 1
+                    self.players[right_player].chips += 1
+                elif d == 'C':
+                    player.chips -= 1
+                    self.chips_in_centre_pile += 1
+                elif d == 'pd':
+                    players_to_steal_from = self._players_to_steal_from(player_id)
+                    if players_to_steal_from:
+                        self.players[random.choice(players_to_steal_from)].chips -= 1
+                        player.chips += 1
+    
+    def _players_to_steal_from(self, player_id):
+        player = self.players[player_id]
         left_player = self._access_player_ids(player_id, -1)
         right_player = self._access_player_ids(player_id, 1)
 
-        for d in dices:
-            if d == 'L':
-                player.chips -= 1
-                self.players[left_player].chips += 1
-            elif d == 'R':
-                player.chips -= 1
-                self.players[right_player].chips += 1
-            elif d == 'C':
-                player.chips -= 1
-                self.chips_in_centre_pile += 1
-            elif d == 'pd':
-                # Disable taking chips from players if also get L and R, or a player has no chips.
-                players_to_steal_from = []
-                for p in self.players:
-                    if self.players[p].chips > 0 and p != left_player and p != right_player and p != player_id:
-                        players_to_steal_from.append(p)
-                if players_to_steal_from:
-                    self.players[random.choice(players_to_steal_from)].chips -= 1
-                    player.chips += 1
+        if player.aggression_level == 1:
+            players_to_steal_from = [left_player, right_player]
+        elif player.aggression_level == 3:
+            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if (p != left_player and p != right_player)] 
+        else:
+            players_to_steal_from = [p for p in range(1, self.no_of_players + 1)]
+
+        final_list = []
+        for p in players_to_steal_from:
+            if self.players[p].chips > 0:
+                final_list.append(p)
+        
+        return final_list
 
     def _check_for_winner(self):
         for p in self.players:
@@ -83,18 +105,9 @@ class Game:
 
     def play_turn(self, player_id):
         player = self.players[player_id]
-
         if player.chips > 0:
-            if player.chips >= 3:
-                dices = [random.choice(self.dice) for _ in range(3)]
-                if dices == ['pd', 'pd', 'pd']:
-                    player.chips += self.chips_in_centre_pile
-                    self.chips_in_centre_pile = 0
-                else:
-                    self._distribute_chips(dices, player_id)
-            else:
-                dices = [random.choice(self.dice) for _ in range(player.chips)]
-                self._distribute_chips(dices, player_id)
+            dices = [random.choice(self.dice) for _ in range(max(player.chips, 3))]
+            self._distribute_chips(dices, player_id)
         else:
             dices = []
 
@@ -116,10 +129,14 @@ class Game:
 
 
 class Player:
-    def __init__(self, id, chips, name=''):
+    def __init__(self, id, chips, name='', aggression_level=1):
         self.id = id
         self.chips = chips
         self.name = name
+        self.aggression_level = aggression_level
+        # 1 = Only take from neighbouring opposition.
+        # 2 = Take from any oppositon.
+        # 3 = Only take from non-neighbouring opposition.
     
     def __repr__(self):
         return f"Player {self.name} ({self.id}) --> Number of chips: {self.chips}"
@@ -127,48 +144,58 @@ class Player:
 
 class History:
     def __init__(self, no_of_players):
-        self.columns = [f"p{i}" for i in range(1, no_of_players + 1)] + ['centre_pile', 'player_in_play', 'dices']
-        self.data = {col: [] for col in self.columns}
         self.no_of_players = no_of_players
+
+    @property
+    def columns(self):
+        return [f"p{i}" for i in range(1, self.no_of_players + 1)] + ['centre_pile', 'player_in_play', 'dices']
+    
+    @property
+    def data(self):
+        return {col: [] for col in self.columns}
     
     def to_dataframe(self):
         return pd.DataFrame(self.data)
 
     def to_csv(self, fname):
-        pd.DataFrame(self.data).to_csv(fname)
+        self.to_dataframe().to_csv(fname)
 
 
 class Statistics:
     def __init__(self, data):
-        if type(data) == str and data.endswith(".csv"):
-            _data = pd.read_csv(data)
-            _data = _data.drop("Unnamed: 0", axis=1)
-            _data = self._cast_dice_lists(_data)
-        elif type(data) == pd.DataFrame:
-            _data = data
+        self.data = data
 
-        self.data = _data
-
-        self.no_of_players = self._no_of_players()
-        self.final_stats = {
-            'winner': self._winner(),
-            'winner_pile': self.iloc(-1)[f"p{self._winner()}"],
-            'centre_pile': self.iloc(-1).centre_pile,
-            'game_length': self.game_length()
-        }
+    def __getitem__(self, key):
+        return self.data.iloc[key]
     
-    def _cast_dice_lists(self, data):
+    @classmethod
+    def from_csv(cls, fname):
+        _data = pd.read_csv(fname)
+        _data = _data.drop("Unnamed: 0", axis=1)
+        
         dice_list = []
-        for row in data.dices:
+        for row in _data.dices:
             try:
                 new_row = row.strip('][').replace("'", "").split(', ')
             except AttributeError:
                 new_row = np.nan
             dice_list.append(new_row)
 
-        data.dices = dice_list
+        _data.dices = dice_list
 
-    def _no_of_players(self):
+        return cls(_data)
+    
+    @property
+    def final_stats(self):
+        return {
+            'winner': self.winner,
+            'winner_pile': self[-1][f"p{self.winner}"],
+            'centre_pile': self[-1].centre_pile,
+            'game_length': self.game_length
+        }
+    
+    @property
+    def no_of_players(self):
         players = 0
         for col in self.data.columns:
             if col.startswith('p'):
@@ -179,17 +206,16 @@ class Statistics:
                     pass
         return players
 
-    def _winner(self):
-        final_turn = self.data.iloc[-1]
+    @property
+    def game_length(self):
+        return len(self.data) - 1
+    
+    @property
+    def winner(self):
+        final_turn = self[-1]
         for id in range(1, self.no_of_players + 1):
             if final_turn[f"p{id}"] != 0:
                 return id
-
-    def game_length(self):
-        return len(self.data) - 1
-
-    def iloc(self, row):
-        return self.data.iloc[row]
 
     def search_dice_patterns(self, dice_1, dice_2, dice_3):
         column = self.data['dices']

@@ -1,18 +1,21 @@
 from left_right_centre import Game, Player
 
 
-def test_setup():
-    data = {
+@pytest.fixture
+def input_data():
+    return {
         (5, 20): 4,
         (6, 19): 3,
         (3, 16.5): 5
     }
 
-    for setup in data:
+def test_setup(input_data):
+
+    for setup in input_data:
         no_of_players, no_of_chips = setup
         g = Game(no_of_players, no_of_chips)
 
-        expected_chips_per_player = data[setup]
+        expected_chips_per_player = input_data[setup]
         for player in g.players:
             assert g.players[player].chips == expected_chips_per_player
 
