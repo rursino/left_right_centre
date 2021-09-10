@@ -15,7 +15,6 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
     g = core.Game(args.players, args.chips)
-    g.play_game()
 
     if args.show:
         print(g.history.to_dataframe())
