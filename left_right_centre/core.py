@@ -1,6 +1,14 @@
-from numpy import random
 import numpy as np
-import pandas as pd
+from numpy import random
+
+from .statistics import History, Statistics
+
+
+def play_lrc_game(players=3, chips=100):
+    g = Game(players, chips)
+    g.play_game()
+    
+    return g
 
 
 class Game:
@@ -15,7 +23,6 @@ class Game:
         self.no_of_chips = no_of_chips
 
         self._setup_game()
-        self.play_game()
     
     def _setup_game(self):
         self.players = {
@@ -30,6 +37,8 @@ class Game:
         self.history.data['centre_pile'].append(self.chips_in_centre_pile)
         self.history.data['player_in_play'].append(np.nan)
         self.history.data['dices'].append(np.nan)
+
+        self.winner = None
     
     def _access_player_ids(self, player_id, movement):
         nop = self.no_of_players
@@ -105,12 +114,9 @@ class Game:
 
     def play_turn(self, player_id):
         player = self.players[player_id]
-        if player.chips > 0:
-            dices = [random.choice(self.dice) for _ in range(max(player.chips, 3))]
-            self._distribute_chips(dices, player_id)
-        else:
-            dices = []
+        dices = [random.choice(self.dice) for _ in range(min(player.chips, 3))]
 
+        self._distribute_chips(dices, player_id)
         self._record_turn(player_id, dices)
         self._check_for_winner()
     
@@ -142,83 +148,4 @@ class Player:
         return f"Player {self.name} ({self.id}) --> Number of chips: {self.chips}"
 
 
-class History:
-    def __init__(self, no_of_players):
-        self.no_of_players = no_of_players
 
-    @property
-    def columns(self):
-        return [f"p{i}" for i in range(1, self.no_of_players + 1)] + ['centre_pile', 'player_in_play', 'dices']
-    
-    @property
-    def data(self):
-        return {col: [] for col in self.columns}
-    
-    def to_dataframe(self):
-        return pd.DataFrame(self.data)
-
-    def to_csv(self, fname):
-        self.to_dataframe().to_csv(fname)
-
-
-class Statistics:
-    def __init__(self, data):
-        self.data = data
-
-    def __getitem__(self, key):
-        return self.data.iloc[key]
-    
-    @classmethod
-    def from_csv(cls, fname):
-        _data = pd.read_csv(fname)
-        _data = _data.drop("Unnamed: 0", axis=1)
-        
-        dice_list = []
-        for row in _data.dices:
-            try:
-                new_row = row.strip('][').replace("'", "").split(', ')
-            except AttributeError:
-                new_row = np.nan
-            dice_list.append(new_row)
-
-        _data.dices = dice_list
-
-        return cls(_data)
-    
-    @property
-    def final_stats(self):
-        return {
-            'winner': self.winner,
-            'winner_pile': self[-1][f"p{self.winner}"],
-            'centre_pile': self[-1].centre_pile,
-            'game_length': self.game_length
-        }
-    
-    @property
-    def no_of_players(self):
-        players = 0
-        for col in self.data.columns:
-            if col.startswith('p'):
-                try:
-                    int(col[-1])
-                    players += 1
-                except:
-                    pass
-        return players
-
-    @property
-    def game_length(self):
-        return len(self.data) - 1
-    
-    @property
-    def winner(self):
-        final_turn = self[-1]
-        for id in range(1, self.no_of_players + 1):
-            if final_turn[f"p{id}"] != 0:
-                return id
-
-    def search_dice_patterns(self, dice_1, dice_2, dice_3):
-        column = self.data['dices']
-
-        target = [dice_1, dice_2, dice_3]
-        return [i for i, row in enumerate(column) if row == target] 
