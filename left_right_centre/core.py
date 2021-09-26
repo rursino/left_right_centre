@@ -20,6 +20,7 @@ def play_lrc_game(players: int = 3, chips: int = 100):
 
 #     no_of_players: int = 3
 #     no_of_chips: int = 100
+#     chips_in_centre_pile: int = 0
     
 #     # Config settings
 #     take_chips_on_pd: bool = True
@@ -89,16 +90,13 @@ class Game:
             player.chips += self.chips_in_centre_pile
             self.chips_in_centre_pile = 0
         else:
-            left_player = player.access_player_ids(-1)
-            right_player = player.access_player_ids(1)
-
             for d in dices:
                 if d == 'L':
                     player.chips -= 1
-                    self.players[left_player].chips += 1
+                    self.players[player.left_player].chips += 1
                 elif d == 'R':
                     player.chips -= 1
-                    self.players[right_player].chips += 1
+                    self.players[player.right_player].chips += 1
                 elif d == 'C':
                     player.chips -= 1
                     self.chips_in_centre_pile += 1
@@ -139,13 +137,10 @@ class Game:
     def players_to_steal_from(self, player_id: int) -> List[int]:
         player = self.players[player_id]
 
-        left_player = player.access_player_ids(-1)
-        right_player = player.access_player_ids(1)
-
         if player.aggression_level == 1:
-            players_to_steal_from = [left_player, right_player]
+            players_to_steal_from = [player.left_player, player.right_player]
         elif player.aggression_level == 3:
-            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if (p != left_player and p != right_player)] 
+            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if (p != player.left_player and p != player.right_player)] 
         else:
             players_to_steal_from = [p for p in range(1, self.no_of_players + 1)]
 
@@ -162,7 +157,6 @@ class Player:
     
     id: int
     chips: int 
-    # game_state: GameState
     no_of_players: int
     name: str = ''
     aggression_level: int = 1
@@ -175,4 +169,11 @@ class Player:
             return 1
         else:
             return self.id + movement
+    
+    @property
+    def left_player(self) -> int:
+        return self.access_player_ids(-1)
 
+    @property
+    def right_player(self) -> int:
+        return self.access_player_ids(1)
