@@ -1,34 +1,65 @@
 import numpy as np
 from numpy import random
 
+from typing import List
+from dataclasses import dataclass
+
 from .statistics import History, Statistics
 
 
-def play_lrc_game(players=3, chips=100):
+def play_lrc_game(players: int = 3, chips: int = 100):
+    """ Play a game of Left, Right, and Centre."""
     g = Game(players, chips)
     g.play_game()
     
     return g
 
 
+# @dataclass
+# class GameSetup:
+
+#     no_of_players: int = 3
+#     no_of_chips: int = 100
+    
+#     # Config settings
+#     take_chips_on_pd: bool = True
+
+
+# @dataclass
+# class GameState:
+
+#     chips_in_centre_pile: int = 0
+
+
 class Game:
+    """ Contains the setup and process of the Left, Right & Centre game. """
 
-    dice = ['L', 'R', 'C', 'd', 'd', 'pd']
-    chips_in_centre_pile = 0    
-    end_of_game = False
-    take_chips_on_pd = True
+    dice: List[str] = ['L', 'R', 'C', 'd', 'd', 'pd']
+    end_of_game: bool = False
 
-    def __init__(self, no_of_players=3, no_of_chips=100):
+    no_of_players: int = 3
+    no_of_chips: int = 100
+    chips_in_centre_pile: int = 0
+    
+    # Config settings
+    take_chips_on_pd: bool = True
+
+
+    def __init__(self, no_of_players: int, no_of_chips: int):
         self.no_of_players = no_of_players
         self.no_of_chips = no_of_chips
 
-        self._setup_game()
+        self.setup_game()
     
-    def _setup_game(self):
+    def setup_game(self) -> None:
         self.players = {
-            i : Player(i, self.no_of_chips // self.no_of_players) for i in range(1, self.no_of_players + 1)
-        }
-
+            i : Player(
+                    id = i,
+                    chips = self.no_of_chips // self.no_of_players,
+                    no_of_players = self.no_of_players
+                )
+                for i in range(1, self.no_of_players + 1)
+            }
         self.history = History(self.no_of_players)
 
         for id in self.players:
@@ -40,16 +71,7 @@ class Game:
 
         self.winner = None
     
-    def _access_player_ids(self, player_id, movement):
-        nop = self.no_of_players
-        if player_id + movement == 0:
-            return nop
-        elif player_id + movement == nop + 1:
-            return 1
-        else:
-            return player_id + movement
-    
-    def _record_turn(self, player_id, dices):
+    def record_turn(self, player_id: int, dices: List[str]) -> None:
         for id in self.players:
             self.history.data[f"p{id}"].append(self.players[id].chips)
         
@@ -57,18 +79,18 @@ class Game:
         self.history.data['player_in_play'].append(player_id)
         self.history.data['dices'].append(dices)
     
-    def _roll_dice(self):
+    def roll_dice(self) -> str:
         return random.choice(self.dice)
     
-    def _distribute_chips(self, dices, player_id):
+    def distribute_chips(self, dices: List[str], player_id: int) -> None:
         player = self.players[player_id]
 
         if dices == ['pd', 'pd', 'pd'] and self.take_chips_on_pd:
             player.chips += self.chips_in_centre_pile
             self.chips_in_centre_pile = 0
         else:
-            left_player = self._access_player_ids(player_id, -1)
-            right_player = self._access_player_ids(player_id, 1)
+            left_player = player.access_player_ids(-1)
+            right_player = player.access_player_ids(1)
 
             for d in dices:
                 if d == 'L':
@@ -81,15 +103,44 @@ class Game:
                     player.chips -= 1
                     self.chips_in_centre_pile += 1
                 elif d == 'pd':
-                    players_to_steal_from = self._players_to_steal_from(player_id)
+                    players_to_steal_from = self.players_to_steal_from(player_id)
                     if players_to_steal_from:
                         self.players[random.choice(players_to_steal_from)].chips -= 1
                         player.chips += 1
-    
-    def _players_to_steal_from(self, player_id):
+
+    def check_for_winner(self) -> None:
+        for p in self.players:
+            if self.players[p].chips == self.no_of_chips - self.chips_in_centre_pile:
+                self.winner = p
+                self.end_of_game = True
+                print(f"GAME OVER!!! Player {p} has won!!")
+
+    def play_turn(self, player_id: int) -> None:
         player = self.players[player_id]
-        left_player = self._access_player_ids(player_id, -1)
-        right_player = self._access_player_ids(player_id, 1)
+        dices = [random.choice(self.dice) for _ in range(min(player.chips, 3))]
+
+        self.distribute_chips(dices, player_id)
+        self.record_turn(player_id, dices)
+        self.check_for_winner()
+    
+    def play_game(self) -> None:
+        print("WELCOME")
+        print("="*20)
+        player_in_play = 1
+        while True:
+            self.play_turn(player_in_play)
+            player_in_play = player_in_play + 1 if player_in_play != self.no_of_players else 1
+            if self.end_of_game:
+                break
+        print("="*20)
+        print("END OF GAME")
+        print("="*20)
+    
+    def players_to_steal_from(self, player_id: int) -> List[int]:
+        player = self.players[player_id]
+
+        left_player = player.access_player_ids(-1)
+        right_player = player.access_player_ids(1)
 
         if player.aggression_level == 1:
             players_to_steal_from = [left_player, right_player]
@@ -105,47 +156,23 @@ class Game:
         
         return final_list
 
-    def _check_for_winner(self):
-        for p in self.players:
-            if self.players[p].chips == self.no_of_chips - self.chips_in_centre_pile:
-                self.winner = p
-                self.end_of_game = True
-                print(f"GAME OVER!!! Player {p} has won!!")
 
-    def play_turn(self, player_id):
-        player = self.players[player_id]
-        dices = [random.choice(self.dice) for _ in range(min(player.chips, 3))]
-
-        self._distribute_chips(dices, player_id)
-        self._record_turn(player_id, dices)
-        self._check_for_winner()
-    
-    def play_game(self):
-        print("WELCOME")
-        print("="*20)
-        player_in_play = 1
-        while True:
-            self.play_turn(player_in_play)
-            player_in_play = player_in_play + 1 if player_in_play != self.no_of_players else 1
-            if self.end_of_game:
-                break
-        print("="*20)
-        print("END OF GAME")
-        print("="*20)
-
-
+@dataclass
 class Player:
-    def __init__(self, id, chips, name='', aggression_level=1):
-        self.id = id
-        self.chips = chips
-        self.name = name
-        self.aggression_level = aggression_level
-        # 1 = Only take from neighbouring opposition.
-        # 2 = Take from any oppositon.
-        # 3 = Only take from non-neighbouring opposition.
     
-    def __repr__(self):
-        return f"Player {self.name} ({self.id}) --> Number of chips: {self.chips}"
+    id: int
+    chips: int 
+    # game_state: GameState
+    no_of_players: int
+    name: str = ''
+    aggression_level: int = 1
 
-
+    def access_player_ids(self, movement: int) -> int:
+        nop = self.no_of_players
+        if self.id + movement == 0:
+            return nop
+        elif self.id + movement == nop + 1:
+            return 1
+        else:
+            return self.id + movement
 

@@ -69,8 +69,10 @@ def test_access_ids():
 
     for id in player_ids:
         expected_results = player_ids[id]
-        assert g._access_player_ids(id, -1) == expected_results[0]
-        assert g._access_player_ids(id, 1) == expected_results[1]
+
+        player = g.players[id]
+        assert player.access_player_ids(-1) == expected_results[0]
+        assert player.access_player_ids(1) == expected_results[1]
     
 def test_play_turn(input_data):
     for setup in input_data.keys():
@@ -93,7 +95,7 @@ def test_chip_distribution(player_setup_data):
     g = Game(no_of_players, no_of_chips)
     for i in range(1, len(historical['player_in_play'])):
 
-        g._distribute_chips(
+        g.distribute_chips(
             historical['dices'][i],
             historical['player_in_play'][i]
         )
@@ -114,7 +116,7 @@ def test_check_for_winner(winner_player_setup):
         g.chips_in_centre_pile = chips_in_centre_pile
         
         # Run target func.
-        g._check_for_winner()
+        g.check_for_winner()
         if pass_result:
             assert g.winner == winner_id
         else:
