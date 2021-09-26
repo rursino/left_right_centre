@@ -1,4 +1,4 @@
-from left_right_centre import Game, Player, History
+from left_right_centre import Game, GameSetup, Player, History
 import pytest
 import numpy as np
 
@@ -46,7 +46,7 @@ def test_setup(input_data):
 
     for setup in input_data:
         no_of_players, no_of_chips = setup
-        g = Game(no_of_players, no_of_chips)
+        g = Game(GameSetup(no_of_players, no_of_chips))
 
         assert g.end_of_game == False
         assert g.dice == ['L', 'R', 'C', 'd', 'd', 'pd']
@@ -59,7 +59,7 @@ def test_setup(input_data):
 def test_access_ids():
     no_of_players = 5
     no_of_chips = 200
-    g = Game(no_of_players, no_of_chips)
+    g = Game(GameSetup(no_of_players, no_of_chips))
 
     player_ids = {
         1: (no_of_players, 2),
@@ -77,7 +77,7 @@ def test_access_ids():
 def test_play_turn(input_data):
     for setup in input_data.keys():
         no_of_players, no_of_chips = setup
-        g = Game(no_of_players, no_of_chips)
+        g = Game(GameSetup(no_of_players, no_of_chips))
 
         player_id = 1
         for i, no_of_chips in enumerate(range(1, 5)):
@@ -92,7 +92,7 @@ def test_play_turn(input_data):
 def test_chip_distribution(player_setup_data):
     no_of_players, no_of_chips, historical = player_setup_data
 
-    g = Game(no_of_players, no_of_chips)
+    g = Game(GameSetup(no_of_players, no_of_chips))
     for i in range(1, len(historical['player_in_play'])):
 
         g.distribute_chips(
@@ -109,7 +109,7 @@ def test_check_for_winner(winner_player_setup):
     for setup in winner_player_setup:
         no_of_players, chips_list, chips_in_centre_pile, winner_id, pass_result, end_of_game = setup
         no_of_chips = sum(chips_list) + chips_in_centre_pile
-        g = Game(no_of_players, no_of_chips)
+        g = Game(GameSetup(no_of_players, no_of_chips))
 
         for i in range(1, no_of_players + 1):
             g.players[i].chips = chips_list[i-1]
@@ -123,8 +123,8 @@ def test_check_for_winner(winner_player_setup):
             assert g.winner != winner_id
         assert g.end_of_game == end_of_game
 
-def test_players_to_steal_from():
-    expected_results = [
-        (1, 5, )
-    ]
+# def test_players_to_steal_from():
+#     expected_results = [
+#         (1, 5, )
+#     ]
 
