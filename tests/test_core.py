@@ -123,8 +123,3 @@ def test_check_for_winner(winner_player_setup):
             assert g.winner != winner_id
         assert g.end_of_game == end_of_game
 
-# def test_players_to_steal_from():
-#     expected_results = [
-#         (1, 5, )
-#     ]
-
