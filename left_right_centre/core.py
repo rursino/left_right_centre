@@ -4,12 +4,19 @@ from numpy import random
 from typing import List, Dict
 from dataclasses import dataclass
 
-from .statistics import History, Statistics
+from .statistics import History
+
+from collections import namedtuple
 
 
-def play_lrc_game(players: int = 3, chips: int = 100):
+
+CreatePlayer = namedtuple("CreatePlayer", ["chips", "name", "aggression_level"])
+
+
+def play_lrc_game(players_dict):
     """ Play a game of Left, Right, and Centre."""
-    setup = GameSetup(players, chips)
+
+    setup = GameSetup(players_dict)
     g = Game(setup)
     g.play_game()
     
@@ -18,13 +25,28 @@ def play_lrc_game(players: int = 3, chips: int = 100):
 
 @dataclass
 class GameSetup:
-
-    no_of_players: int = 3
-    no_of_chips: int = 100
+    
+    players_input: List[CreatePlayer]
     chips_in_centre_pile: int = 0
     
     # Parameter settings
     take_chips_on_pd: bool = True
+
+    @property
+    def players(self):
+        return {
+            i + 1: Player(i + 1, player.chips, len(self.players_input), player.name, player.aggression_level)
+            for i, player
+            in enumerate(self.players_input)
+        }
+
+    @property
+    def no_of_players(self):
+        return len(self.players)
+    
+    @property
+    def no_of_chips(self):
+        return sum(self.players[player_id].chips for player_id in self.players)
 
 
 class Game:
@@ -35,19 +57,11 @@ class Game:
 
     def __init__(self, setup: GameSetup):
         self.setup = setup
+        self.players = setup.players
         self.setup_game()
  
     def setup_game(self) -> None:
         self.chips_in_centre_pile = self.setup.chips_in_centre_pile
-
-        self.players = {
-            i : Player(
-                    player_id = i,
-                    chips = self.setup.no_of_chips // self.setup.no_of_players,
-                    no_of_players = self.setup.no_of_players
-                )
-                for i in range(1, self.setup.no_of_players + 1)
-            }
         self.history = History(self.setup.no_of_players)
 
         for player_id in self.players:
@@ -131,7 +145,8 @@ class Game:
 class Player:
     
     player_id: int
-    chips: int 
+    chips: int
+
     no_of_players: int
 
     # Properties
@@ -139,22 +154,21 @@ class Player:
     aggression_level: int = 1
 
     def access_player_ids(self, movement: int) -> int:
-        nop = self.no_of_players
         if self.player_id + movement == 0:
-            return nop
-        elif self.player_id + movement == nop + 1:
+            return self.no_of_players
+        elif self.player_id + movement == self.no_of_players + 1:
             return 1
         else:
             return self.player_id + movement
-    
-    @property
-    def left_player(self) -> int:
-        return self.access_player_ids(-1)
 
     @property
-    def right_player(self) -> int:
-        return self.access_player_ids(1)
+    def left_player(self):
+        return self.access_player_ids(-1)
     
+    @property
+    def right_player(self):
+        return self.access_player_ids(1)
+
     def players_to_steal_from(self, all_player_chips: Dict) -> List[int]:
         if self.aggression_level == 1:
             players_to_steal_from = [self.left_player, self.right_player]
