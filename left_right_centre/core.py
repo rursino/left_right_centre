@@ -13,10 +13,10 @@ from collections import namedtuple
 CreatePlayer = namedtuple("CreatePlayer", ["chips", "name", "aggression_level"])
 
 
-def play_lrc_game(players_dict):
+def play_lrc_game(players_dict, take_chips_on_pd: bool = True):
     """ Play a game of Left, Right, and Centre."""
 
-    setup = GameSetup(players_dict)
+    setup = GameSetup(players_dict, take_chips_on_pd)
     g = Game(setup)
     g.play_game()
     
