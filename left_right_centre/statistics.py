@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 class History:
@@ -81,3 +81,13 @@ class Statistics:
 
         target = [dice_1, dice_2, dice_3]
         return [i for i, row in enumerate(column) if row == target] 
+
+    def pattern_pr(self, patterns: List[Tuple]) -> Dict[str, Tuple]:
+        """ Returns empirical (actual) and theoritical (expected) probability of each dice pattern passed in from 'patterns'. """
+
+        results = {}
+        for pattern, expected in patterns:
+            chance = len(self.search_dice_patterns(*pattern)) / self.game_length
+            results[str(pattern)] = (chance, expected)
+
+        return results

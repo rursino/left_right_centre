@@ -33,17 +33,16 @@ class Game:
     dice: List[str] = ['L', 'R', 'C', 'd', 'd', 'pd']
     end_of_game: bool = False
 
-
     def __init__(self, setup: GameSetup):
         self.setup = setup
         self.setup_game()
-    
+ 
     def setup_game(self) -> None:
         self.chips_in_centre_pile = self.setup.chips_in_centre_pile
 
         self.players = {
             i : Player(
-                    id = i,
+                    player_id = i,
                     chips = self.setup.no_of_chips // self.setup.no_of_players,
                     no_of_players = self.setup.no_of_players
                 )
@@ -51,9 +50,9 @@ class Game:
             }
         self.history = History(self.setup.no_of_players)
 
-        for id in self.players:
-            self.history.data[f"p{id}"].append(self.players[id].chips)
-        
+        for player_id in self.players:
+            self.history.data[f"p{player_id}"].append(self.players[player_id].chips)
+ 
         self.history.data['centre_pile'].append(self.chips_in_centre_pile)
         self.history.data['player_in_play'].append(np.nan)
         self.history.data['dices'].append(np.nan)
@@ -61,8 +60,8 @@ class Game:
         self.winner = None
     
     def record_turn(self, player_id: int, dices: List[str]) -> None:
-        for id in self.players:
-            self.history.data[f"p{id}"].append(self.players[id].chips)
+        for pid in self.players:
+            self.history.data[f"p{pid}"].append(self.players[pid].chips)
         
         self.history.data['centre_pile'].append(self.chips_in_centre_pile)
         self.history.data['player_in_play'].append(player_id)
@@ -131,20 +130,22 @@ class Game:
 @dataclass
 class Player:
     
-    id: int
+    player_id: int
     chips: int 
     no_of_players: int
+
+    # Properties
     name: str = ''
     aggression_level: int = 1
 
     def access_player_ids(self, movement: int) -> int:
         nop = self.no_of_players
-        if self.id + movement == 0:
+        if self.player_id + movement == 0:
             return nop
-        elif self.id + movement == nop + 1:
+        elif self.player_id + movement == nop + 1:
             return 1
         else:
-            return self.id + movement
+            return self.player_id + movement
     
     @property
     def left_player(self) -> int:
