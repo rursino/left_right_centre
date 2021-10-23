@@ -47,10 +47,10 @@ class Statistics:
     @property
     def final_stats(self) -> Dict[(str, int)]:
         return {
-            'winner': self.winner,
-            'winner_pile': self[-1][f"p{self.winner}"],
-            'centre_pile': self[-1].centre_pile,
-            'game_length': self.game_length
+            'winner': str(self.winner),
+            'winner_pile': str(self[-1][f"p{self.winner}"]),
+            'centre_pile': str(self[-1].centre_pile),
+            'game_length': str(self.game_length),
         }
     
     @property
