@@ -158,3 +158,24 @@ def test_check_for_winner(winner_player_setup):
             assert g.winner != winner_id
         assert g.end_of_game == end_of_game
 
+@pytest.mark.parametrize(
+    "player_id, aggression_level, expected",
+    [
+        (2, 1, [1]), (2, 2, [1, 4, 6]), (2, 3, [4, 6]),
+        (6, 1, [1]), (6, 2, [1, 2, 4]), (6, 3, [2, 4]),
+        (4, 1, []), (4, 2, [1, 2, 6]), (4, 3, [1, 2, 6]),
+    ]
+)
+def test_players_to_steal_from(player_id, aggression_level, expected):
+    chips = [80,70,0,31,0,78]
+    players_dict = dict(zip(range(1, len(chips) + 1), chips))
+
+    test_player = Player(
+        player_id,
+        players_dict[player_id],
+        len(players_dict),
+        aggression_level=aggression_level
+    )
+
+    assert test_player.players_to_steal_from(players_dict) == expected
+

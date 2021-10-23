@@ -173,9 +173,9 @@ class Player:
         if self.aggression_level == 1:
             players_to_steal_from = [self.left_player, self.right_player]
         elif self.aggression_level == 3:
-            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if (p != self.left_player and p != self.right_player)] 
+            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if (p != self.left_player and p != self.right_player and p != self.player_id)] 
         else:
-            players_to_steal_from = [p for p in range(1, self.no_of_players + 1)]
+            players_to_steal_from = [p for p in range(1, self.no_of_players + 1) if p != self.player_id]
 
         final_list = []
         for p in players_to_steal_from:
